@@ -2,68 +2,451 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>DocQuery</title>
+<title>DocQuery — Reading Room</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  body { font-family: system-ui, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 16px; color: #1a1a1a; }
-  h1 { font-size: 1.4rem; }
-  .card { border: 1px solid #ddd; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
-  input[type=text] { width: 100%; padding: 10px; font-size: 1rem; box-sizing: border-box; }
-  button { padding: 10px 16px; font-size: 1rem; cursor: pointer; margin-top: 8px; }
-  #docs li { font-size: 0.9rem; }
-  #answer { white-space: pre-wrap; margin-top: 12px; }
-  .sources { font-size: 0.8rem; color: #555; margin-top: 8px; }
+  :root {
+    --paper: #F2EFE6;
+    --panel: #FBFAF5;
+    --ink: #21262B;
+    --ink-soft: #5B5647;
+    --line: #D8D2C2;
+    --pine: #2B5D5A;
+    --pine-dark: #1E4341;
+    --brick: #B4472A;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .app {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    height: 100vh;
+  }
+
+  /* ---------- Sidebar: the catalog drawer ---------- */
+  .drawer {
+    background: var(--panel);
+    border-right: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  .drawer-label {
+    padding: 22px 20px 16px;
+    border-bottom: 2px solid var(--ink);
+  }
+
+  .drawer-label .mark {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--pine);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .drawer-label h1 {
+    font-family: 'Source Serif 4', serif;
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  .upload-zone {
+    margin: 16px 16px 8px;
+    padding: 14px;
+    border: 1.5px dashed var(--line);
+    border-radius: 4px;
+    text-align: center;
+  }
+
+  .upload-zone label {
+    display: block;
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+  }
+
+  .upload-zone input[type=file] {
+    font-size: 12px;
+    width: 100%;
+    color: var(--ink-soft);
+  }
+
+  .upload-btn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 8px;
+    background: var(--pine);
+    color: var(--panel);
+    border: none;
+    border-radius: 3px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .upload-btn:hover { background: var(--pine-dark); }
+  .upload-btn:disabled { background: var(--line); cursor: default; }
+
+  .catalog-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 12px 20px;
+  }
+
+  .catalog-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    padding: 10px 8px 6px;
+  }
+
+  .catalog-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+
+  .catalog-card .fname {
+    font-size: 13px;
+    font-weight: 500;
+    word-break: break-word;
+    margin-bottom: 4px;
+  }
+
+  .catalog-card .meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--pine);
+  }
+
+  .empty-note {
+    padding: 16px 8px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+
+  /* ---------- Main: the reading room ---------- */
+  .room {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  .room-header {
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .room-header .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--pine);
+    margin-bottom: 4px;
+  }
+
+  .room-header h2 {
+    font-family: 'Source Serif 4', serif;
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--ink-soft);
+  }
+
+  .thread {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px 32px;
+    max-width: 780px;
+  }
+
+  .welcome {
+    color: var(--ink-soft);
+    font-size: 14px;
+    line-height: 1.7;
+    max-width: 480px;
+  }
+  .welcome h3 {
+    font-family: 'Source Serif 4', serif;
+    font-size: 22px;
+    color: var(--ink);
+    margin: 0 0 10px;
+  }
+
+  .qa-block { margin-bottom: 36px; }
+
+  .question-line {
+    font-family: 'Source Serif 4', serif;
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 14px;
+    padding-left: 16px;
+    border-left: 3px solid var(--brick);
+  }
+
+  .answer-text {
+    font-size: 15px;
+    line-height: 1.75;
+    white-space: pre-wrap;
+    margin-bottom: 16px;
+    color: var(--ink);
+  }
+
+  .answer-text.pending {
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+
+  /* Signature element: source index cards */
+  .sources-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+  }
+
+  .index-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .index-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-top: 3px solid var(--pine);
+    border-radius: 2px;
+    padding: 10px 14px;
+  }
+
+  .index-card .call-number {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--pine);
+    margin-bottom: 4px;
+  }
+
+  .index-card .snippet {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+
+  .composer {
+    border-top: 1px solid var(--line);
+    padding: 18px 32px 24px;
+    background: var(--panel);
+  }
+
+  .composer form {
+    display: flex;
+    gap: 10px;
+    max-width: 780px;
+  }
+
+  .composer input[type=text] {
+    flex: 1;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    background: var(--paper);
+    color: var(--ink);
+  }
+  .composer input[type=text]:focus {
+    outline: 2px solid var(--pine);
+    outline-offset: 1px;
+  }
+
+  .composer button {
+    padding: 12px 22px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 3px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .composer button:hover { background: var(--pine-dark); }
+  .composer button:disabled { background: var(--line); cursor: default; }
+
+  @media (max-width: 720px) {
+    .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    .drawer { height: auto; max-height: 240px; }
+  }
 </style>
 </head>
 <body>
-  <h1>DocQuery</h1>
 
-  <div class="card">
-    <strong>Upload a document</strong>
-    <input type="file" id="file" accept=".pdf,.txt,.md" />
-    <button onclick="upload()">Upload</button>
-    <ul id="docs"></ul>
-  </div>
+<div class="app">
+  <aside class="drawer">
+    <div class="drawer-label">
+      <span class="mark">Doc · Query</span>
+      <h1>Reading Room</h1>
+    </div>
 
-  <div class="card">
-    <strong>Ask a question</strong>
-    <input type="text" id="question" placeholder="What does the document say about...?" />
-    <button onclick="ask()">Ask</button>
-    <div id="answer"></div>
-    <div class="sources" id="sources"></div>
-  </div>
+    <div class="upload-zone">
+      <label for="file">Add a document to the catalog</label>
+      <input type="file" id="file" accept=".pdf,.txt,.md" />
+      <button class="upload-btn" id="uploadBtn" onclick="upload()">File it</button>
+    </div>
+
+    <div class="catalog-list">
+      <div class="catalog-eyebrow">Catalog</div>
+      <div id="docs"></div>
+    </div>
+  </aside>
+
+  <main class="room">
+    <div class="room-header">
+      <div class="eyebrow">Ask the archive</div>
+      <h2>Questions are answered only from what's on file</h2>
+    </div>
+
+    <div class="thread" id="thread">
+      <div class="welcome" id="welcome">
+        <h3>Nothing asked yet</h3>
+        <p>File a document on the left, then ask a question below. Every answer cites exactly which passages it drew from — nothing is answered from outside the catalog.</p>
+      </div>
+    </div>
+
+    <div class="composer">
+      <form onsubmit="ask(event)">
+        <input type="text" id="question" placeholder="What would you like to know?" autocomplete="off" />
+        <button type="submit" id="askBtn">Ask</button>
+      </form>
+    </div>
+  </main>
+</div>
 
 <script>
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
 async function loadDocs() {
   const res = await fetch('/api/documents');
   const docs = await res.json();
-  document.getElementById('docs').innerHTML = docs
-    .map(d => `<li>${d.filename} (${d.chunk_count} chunks)</li>`).join('');
+  const container = document.getElementById('docs');
+  if (docs.length === 0) {
+    container.innerHTML = '<div class="empty-note">The catalog is empty. File something to begin.</div>';
+    return;
+  }
+  container.innerHTML = docs.map(d => `
+    <div class="catalog-card">
+      <div class="fname">${escapeHtml(d.filename)}</div>
+      <div class="meta">${d.chunk_count} indexed passage${d.chunk_count === 1 ? '' : 's'}</div>
+    </div>
+  `).join('');
 }
 
 async function upload() {
-  const file = document.getElementById('file').files[0];
-  if (!file) return alert('Pick a file first');
+  const fileInput = document.getElementById('file');
+  const file = fileInput.files[0];
+  if (!file) return;
+  const btn = document.getElementById('uploadBtn');
+  btn.disabled = true;
+  btn.textContent = 'Filing…';
   const fd = new FormData();
   fd.append('file', file);
-  const res = await fetch('/api/documents', { method: 'POST', body: fd });
-  if (!res.ok) return alert('Upload failed');
-  await loadDocs();
+  try {
+    const res = await fetch('/api/documents', { method: 'POST', body: fd });
+    if (!res.ok) throw new Error('Upload failed');
+    fileInput.value = '';
+    await loadDocs();
+  } catch (e) {
+    alert('Could not file that document — try again.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'File it';
+  }
 }
 
-async function ask() {
-  const question = document.getElementById('question').value;
+async function ask(evt) {
+  evt.preventDefault();
+  const input = document.getElementById('question');
+  const question = input.value.trim();
   if (!question) return;
-  document.getElementById('answer').textContent = 'Thinking...';
-  const res = await fetch('/api/ask', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question }),
-  });
-  const data = await res.json();
-  document.getElementById('answer').textContent = data.answer;
-  document.getElementById('sources').innerHTML = (data.sources || [])
-    .map(s => `<div>📄 ${s.filename}: "${s.snippet}..."</div>`).join('');
+
+  document.getElementById('welcome')?.remove();
+
+  const thread = document.getElementById('thread');
+  const block = document.createElement('div');
+  block.className = 'qa-block';
+  block.innerHTML = `
+    <div class="question-line">${escapeHtml(question)}</div>
+    <div class="answer-text pending">Reading the catalog…</div>
+  `;
+  thread.appendChild(block);
+  thread.scrollTop = thread.scrollHeight;
+
+  input.value = '';
+  document.getElementById('askBtn').disabled = true;
+
+  try {
+    const res = await fetch('/api/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question }),
+    });
+    const data = await res.json();
+
+    const answerEl = block.querySelector('.answer-text');
+    answerEl.classList.remove('pending');
+    answerEl.textContent = data.answer || data.error || 'No answer returned.';
+
+    if (data.sources && data.sources.length > 0) {
+      const cardsHtml = data.sources.map((s, i) => `
+        <div class="index-card">
+          <div class="call-number">[${i + 1}] ${escapeHtml(s.filename)}</div>
+          <div class="snippet">${escapeHtml(s.snippet)}…</div>
+        </div>
+      `).join('');
+      block.insertAdjacentHTML('beforeend', `
+        <div class="sources-label">Cited from</div>
+        <div class="index-cards">${cardsHtml}</div>
+      `);
+    }
+  } catch (e) {
+    const answerEl = block.querySelector('.answer-text');
+    answerEl.classList.remove('pending');
+    answerEl.textContent = 'Something went wrong reaching the archive — try again.';
+  } finally {
+    document.getElementById('askBtn').disabled = false;
+    thread.scrollTop = thread.scrollHeight;
+  }
 }
 
 loadDocs();

@@ -46,7 +46,7 @@ app.post("/api/ask", async (c) => {
   const { question } = await c.req.json();
   if (!question) return c.json({ error: "question is required" }, 400);
 
-  const hits = await searchChunks(question, 5);
+  const hits = await searchChunks(question, 8);
   if (hits.length === 0) {
     return c.json({ answer: "No documents indexed yet — upload one first.", sources: [] });
   }
@@ -54,6 +54,16 @@ app.post("/api/ask", async (c) => {
   const context = hits
     .map((h, i) => `[${i + 1}] (${h.filename})\n${h.text}`)
     .join("\n\n");
+
+  const systemPrompt = `You are a careful research assistant answering questions strictly from the provided document excerpts.
+
+Rules:
+- Answer using ONLY the excerpts given. Never use outside knowledge.
+- Write a direct, complete answer in 2-5 sentences — don't just restate the excerpts, synthesize them into a clear answer.
+- Cite the excerpt number(s) that support each claim, like [1] or [1][3], placed right after the relevant statement.
+- If multiple excerpts disagree or come from unrelated topics, say so explicitly rather than blending them into one answer.
+- If the excerpts don't contain enough information to answer, say exactly what's missing rather than guessing.
+- Do not pad the answer with meta-commentary about the excerpts themselves — answer the question first.`;
 
   const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
@@ -63,11 +73,13 @@ app.post("/api/ask", async (c) => {
     },
     body: JSON.stringify({
       model: "llama-3.3-70b-versatile",
-      max_tokens: 600,
+      max_tokens: 700,
+      temperature: 0.2,
       messages: [
+        { role: "system", content: systemPrompt },
         {
           role: "user",
-          content: `Answer the question using ONLY the context below. Cite sources like [1], [2]. If the context doesn't contain the answer, say so.\n\nContext:\n${context}\n\nQuestion: ${question}`,
+          content: `Excerpts:\n${context}\n\nQuestion: ${question}`,
         },
       ],
     }),
