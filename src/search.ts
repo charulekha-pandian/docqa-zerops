@@ -23,6 +23,7 @@ export async function initIndex() {
       mappings: {
         properties: {
           documentId: { type: "keyword" },
+          sessionId: { type: "keyword" },
           filename: { type: "keyword" },
           text: { type: "text" },
           chunkIndex: { type: "integer" },
@@ -32,18 +33,29 @@ export async function initIndex() {
   }
 }
 
-export async function indexChunks(documentId: string, filename: string, chunks: string[]) {
+export async function indexChunks(
+  documentId: string,
+  sessionId: string,
+  filename: string,
+  chunks: string[]
+) {
   const operations = chunks.flatMap((text, i) => [
     { index: { _index: CHUNKS_INDEX } },
-    { documentId, filename, text, chunkIndex: i },
+    { documentId, sessionId, filename, text, chunkIndex: i },
   ]);
   if (operations.length) await es.bulk({ operations, refresh: true });
 }
 
-export async function searchChunks(query: string, size = 5) {
+// Search is scoped to a session — chats never see each other's documents.
+export async function searchChunks(query: string, sessionId: string, size = 8) {
   const result = await es.search({
     index: CHUNKS_INDEX,
-    query: { match: { text: { query } } },
+    query: {
+      bool: {
+        must: [{ match: { text: { query } } }],
+        filter: [{ term: { sessionId } }],
+      },
+    },
     size,
   });
   return result.hits.hits.map((h: any) => ({
@@ -51,4 +63,12 @@ export async function searchChunks(query: string, size = 5) {
     filename: h._source.filename as string,
     score: h._score,
   }));
+}
+
+export async function deleteSessionChunks(sessionId: string) {
+  await es.deleteByQuery({
+    index: CHUNKS_INDEX,
+    query: { term: { sessionId } },
+    refresh: true,
+  });
 }
