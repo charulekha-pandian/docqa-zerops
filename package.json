@@ -12,6 +12,7 @@
     "pg": "^8.13.0",
     "@aws-sdk/client-s3": "^3.670.0",
     "pdf-parse": "^1.1.1",
-    "nanoid": "^5.0.7"
+    "nanoid": "^5.0.7",
+    "@elastic/transport": "^8.7.1"
   }
 }

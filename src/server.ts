@@ -75,7 +75,7 @@ app.post("/api/ask", async (c) => {
 
   if (!groqRes.ok) {
     const errText = await groqRes.text();
-    return c.json({ error: `Groq API error: ${errText}` }, 502);
+    return c.json({ error: `Groq API error: ${errText}` }, 500);
   }
 
   const groqData = await groqRes.json();

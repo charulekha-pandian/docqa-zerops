@@ -1,6 +1,17 @@
 import { Client } from "@elastic/elasticsearch";
+import { HttpConnection } from "@elastic/transport";
 
-export const es = new Client({ node: process.env.ES_URL || "http://elastic:9200" });
+export const es = new Client({
+  Connection: HttpConnection,
+  node: process.env.ES_URL || "http://elastic:9200",
+  auth:
+    process.env.ES_USER && process.env.ES_PASSWORD
+      ? {
+          username: process.env.ES_USER,
+          password: process.env.ES_PASSWORD,
+        }
+      : undefined,
+});
 
 export const CHUNKS_INDEX = "chunks";
 

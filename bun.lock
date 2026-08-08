@@ -7,6 +7,7 @@
       "dependencies": {
         "@aws-sdk/client-s3": "^3.670.0",
         "@elastic/elasticsearch": "^8.15.0",
+        "@elastic/transport": "^8.7.1",
         "hono": "^4.6.0",
         "nanoid": "^5.0.7",
         "pdf-parse": "^1.1.1",
