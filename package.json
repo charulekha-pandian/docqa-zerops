@@ -1,0 +1,17 @@
+{
+  "name": "docqa",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "bun run --watch src/server.ts",
+    "start": "bun run src/server.ts"
+  },
+  "dependencies": {
+    "hono": "^4.6.0",
+    "@elastic/elasticsearch": "^8.15.0",
+    "pg": "^8.13.0",
+    "@aws-sdk/client-s3": "^3.670.0",
+    "pdf-parse": "^1.1.1",
+    "nanoid": "^5.0.7"
+  }
+}

@@ -1,0 +1,21 @@
+# Reference only — this is what to provision when you create the Zerops project.
+# Easiest path: skip this file and just tell your ZCP agent:
+#   "Provision a Postgres 16 db called 'db', an Elasticsearch service called
+#    'elastic', and an object storage service called 'storage', then deploy
+#    this repo as the 'api' service."
+#
+# Manual equivalent (Zerops project import format):
+project:
+  name: docqa
+services:
+  - hostname: db
+    type: postgresql@16
+    mode: NON_HA
+  - hostname: elastic
+    type: elasticsearch@8
+    mode: NON_HA
+  - hostname: storage
+    type: object-storage
+  - hostname: api
+    type: bun@1.3
+    buildFromGit: <your-repo-url>

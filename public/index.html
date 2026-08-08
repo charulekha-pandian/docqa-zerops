@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>DocQuery</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 16px; color: #1a1a1a; }
+  h1 { font-size: 1.4rem; }
+  .card { border: 1px solid #ddd; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+  input[type=text] { width: 100%; padding: 10px; font-size: 1rem; box-sizing: border-box; }
+  button { padding: 10px 16px; font-size: 1rem; cursor: pointer; margin-top: 8px; }
+  #docs li { font-size: 0.9rem; }
+  #answer { white-space: pre-wrap; margin-top: 12px; }
+  .sources { font-size: 0.8rem; color: #555; margin-top: 8px; }
+</style>
+</head>
+<body>
+  <h1>DocQuery</h1>
+
+  <div class="card">
+    <strong>Upload a document</strong>
+    <input type="file" id="file" accept=".pdf,.txt,.md" />
+    <button onclick="upload()">Upload</button>
+    <ul id="docs"></ul>
+  </div>
+
+  <div class="card">
+    <strong>Ask a question</strong>
+    <input type="text" id="question" placeholder="What does the document say about...?" />
+    <button onclick="ask()">Ask</button>
+    <div id="answer"></div>
+    <div class="sources" id="sources"></div>
+  </div>
+
+<script>
+async function loadDocs() {
+  const res = await fetch('/api/documents');
+  const docs = await res.json();
+  document.getElementById('docs').innerHTML = docs
+    .map(d => `<li>${d.filename} (${d.chunk_count} chunks)</li>`).join('');
+}
+
+async function upload() {
+  const file = document.getElementById('file').files[0];
+  if (!file) return alert('Pick a file first');
+  const fd = new FormData();
+  fd.append('file', file);
+  const res = await fetch('/api/documents', { method: 'POST', body: fd });
+  if (!res.ok) return alert('Upload failed');
+  await loadDocs();
+}
+
+async function ask() {
+  const question = document.getElementById('question').value;
+  if (!question) return;
+  document.getElementById('answer').textContent = 'Thinking...';
+  const res = await fetch('/api/ask', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question }),
+  });
+  const data = await res.json();
+  document.getElementById('answer').textContent = data.answer;
+  document.getElementById('sources').innerHTML = (data.sources || [])
+    .map(s => `<div>📄 ${s.filename}: "${s.snippet}..."</div>`).join('');
+}
+
+loadDocs();
+</script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+zerops:
+  - setup: api
+    build:
+      base: bun@1.3
+      buildCommands:
+        - bun install
+      deployFiles: ./
+    run:
+      base: bun@1.3
+      ports:
+        - port: 3000
+          httpSupport: true
+      envVariables:
+        DATABASE_URL: ${db_connectionString}
+        ES_URL: http://elastic:9200
+        STORAGE_ACCESS_KEY: ${storage_accessKeyId}
+        STORAGE_SECRET_KEY: ${storage_secretAccessKey}
+        STORAGE_BUCKET: docqa
+        GROQ_API_KEY: ${GROQ_API_KEY}
+      start: bun run src/server.ts
